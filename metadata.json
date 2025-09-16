@@ -1,0 +1,8 @@
+{
+  "name": "FundMe",
+  "description": "FundMe is a open market deal financing app. Users look for quick loans/funding and pay back using Ecocash. AI Helps u navigate risks and deals.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "prompt": ""
+}

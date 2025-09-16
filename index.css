@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.6); /* slate-900 with opacity */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-input {
+    background: rgba(15, 23, 42, 0.8); /* slate-900 with opacity */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Custom scrollbar for deal list */
+.deal-list::-webkit-scrollbar {
+  width: 6px;
+}
+.deal-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.deal-list::-webkit-scrollbar-thumb {
+  background: #4f46e5; /* indigo-600 */
+  border-radius: 3px;
+}
+.deal-list::-webkit-scrollbar-thumb:hover {
+  background: #4338ca; /* indigo-700 */
+}

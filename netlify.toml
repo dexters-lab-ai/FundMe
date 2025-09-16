@@ -1,0 +1,28 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18.0.0"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  framework = "vite"
+  command = "npm run dev"
+  port = 5173
+  targetPort = 5173
+  publish = "dist"
+  autoLaunch = false
+
+[context.production]
+  command = "npm run build"
+  environment = { NODE_VERSION = "18.0.0" }
+
+[context.deploy-preview]
+  command = "npm run build"
+  environment = { NODE_VERSION = "18.0.0" }

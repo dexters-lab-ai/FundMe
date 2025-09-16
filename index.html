@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FundMe</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+      @layer base {
+        body {
+          font-family: 'Inter', sans-serif;
+        }
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-dark': '#020617', // slate-950
+              'brand-light': '#0f172a', // slate-900
+              'brand-accent': '#4f46e5', // indigo-600
+            },
+          },
+        },
+      };
+    </script>
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "lit": "https://esm.sh/lit@^3.3.0",
+    "lit/": "https://esm.sh/lit@^3.3.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.15.0",
+    "three": "https://esm.sh/three@^0.164.0",
+    "three/": "https://esm.sh/three@^0.164.0/",
+    "framer-motion": "https://esm.sh/framer-motion@11.1.7",
+    "zustand": "https://esm.sh/zustand@4.5.2",
+    "convex/react": "https://esm.sh/convex@1.13.0/react",
+    "@clerk/clerk-react": "https://esm.sh/@clerk/clerk-react@5.2.3",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "convex/": "https://aistudiocdn.com/convex@^1.27.0/",
+    "svix": "https://aistudiocdn.com/svix@^1.76.1",
+    "@clerk/clerk-sdk-node": "https://aistudiocdn.com/@clerk/clerk-sdk-node@^5.1.6"
+  }
+}
+</script>
+    <link rel="stylesheet" href="/index.css" />
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-brand-dark text-slate-200 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
