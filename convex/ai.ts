@@ -5,10 +5,17 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Id } from "./_generated/dataModel";
 
 // Define the response type for the generateContent API
-type GenerateContentResponse = {
+interface GenerateContentResponse {
   text: () => string;
-  // Add other properties as needed
-};
+  responseId: string;
+  candidates?: Array<{
+    content: {
+      parts: Array<{
+        text: string;
+      }>;
+    };
+  }>;
+}
 
 type GenerateContentResult = {
   response: GenerateContentResponse;
@@ -52,19 +59,20 @@ export const ask = action({
     prompt: v.string(),
   },
   handler: async (ctx: ActionCtx, { prompt }: { prompt: string }) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("You must be logged in to ask a question.");
-    }
+    try {
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) {
+        throw new Error("Please sign in to use the AI search feature.");
+      }
 
-    const user = await ctx.runQuery(api.users.getCurrent) as User | null;
-    if (!user) {
-      throw new Error("User not found.");
-    }
+      const user = await ctx.runQuery(api.users.getCurrent) as User | null;
+      if (!user) {
+        throw new Error("Your account needs to be set up. Please complete your profile in settings.");
+      }
 
-    if (!user.encryptedGeminiKey) {
-      throw new Error("You must have a Gemini API key saved in your settings to use the AI search.");
-    }
+      if (!user.encryptedGeminiKey) {
+        throw new Error("Please set up your Gemini API key in settings to use AI search.");
+      }
 
     const ai = new GoogleGenAI({ apiKey: user.encryptedGeminiKey });
 
@@ -116,16 +124,30 @@ export const ask = action({
             },
         });
         
-        const summary = (followUpResponse as unknown as GenerateContentResult).response.text();
+        if (!followUpResponse) {
+          console.error('Invalid follow-up response:', followUpResponse);
+          throw new Error('Invalid response from AI service');
+        }
+        const response = followUpResponse as unknown as GenerateContentResponse;
+        const summary = response.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from AI';
         return { summary, deals };
       }
     }
 
-    // If no tool was called, return the direct text response.
-    const text = (response as unknown as GenerateContentResult).response.text();
-    return { 
-      summary: text,
-      deals: [] as Deal[] 
-    };
+      // If no tool was called, return the direct text response.
+      if (!response) {
+        console.error('Invalid AI response:', response);
+        throw new Error('Invalid response from AI service');
+      }
+      const aiResponse = response as unknown as GenerateContentResponse;
+      const text = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from AI';
+      return { 
+        summary: text,
+        deals: [] as Deal[] 
+      };
+    } catch (error) {
+      console.error("Error in AI processing:", error);
+      throw error;
+    }
   },
 });

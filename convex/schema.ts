@@ -6,6 +6,7 @@ export default defineSchema({
   users: defineTable({
     clerkId: v.string(),
     name: v.string(),
+    email: v.optional(v.string()),
     phone: v.optional(v.string()), // Phone might not always be available
     profileUrl: v.optional(v.string()),
     kycStatus: v.union(
@@ -15,7 +16,11 @@ export default defineSchema({
         v.literal('rejected')
     ),
     encryptedGeminiKey: v.optional(v.string()),
-  }).index('by_clerk_id', ['clerkId']),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+  .index('by_clerk_id', ['clerkId'])
+  .index('by_createdAt', ['createdAt']),
 
   // Deals created by users
   deals: defineTable({

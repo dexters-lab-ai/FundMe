@@ -17,6 +17,7 @@ import type * as ai from "../ai.js";
 import type * as bookmarks from "../bookmarks.js";
 import type * as deals from "../deals.js";
 import type * as http from "../http.js";
+import type * as syncUser from "../syncUser.js";
 import type * as users from "../users.js";
 
 /**
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   bookmarks: typeof bookmarks;
   deals: typeof deals;
   http: typeof http;
+  syncUser: typeof syncUser;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

@@ -6,11 +6,14 @@ interface AppState {
   summaryTimeout: number | null;
   searchResults: Deal[];
   isSearching: boolean;
+  searchError: string | null;
   setAiSummary: (summary: string, duration?: number) => void;
   startSearch: () => void;
   setSearchResults: (deals: Deal[], summary: string) => void;
+  setSearchError: (error: string | null) => void;
   clearSearch: () => void;
   clearSummary: () => void;
+  clearError: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -18,6 +21,7 @@ export const useStore = create<AppState>((set, get) => ({
   summaryTimeout: null,
   searchResults: [],
   isSearching: false,
+  searchError: null,
 
   setAiSummary: (summary, duration = 60000) => {
     const { summaryTimeout } = get();
@@ -51,4 +55,16 @@ export const useStore = create<AppState>((set, get) => ({
     if (summaryTimeout) clearTimeout(summaryTimeout);
     set({ aiSummary: '', summaryTimeout: null });
   },
+  
+  setSearchError: (error) => {
+    set({ searchError: error });
+    // Clear error after 10 seconds
+    if (error) {
+      setTimeout(() => {
+        set(state => state.searchError === error ? { searchError: null } : {});
+      }, 10000);
+    }
+  },
+  
+  clearError: () => set({ searchError: null }),
 }));

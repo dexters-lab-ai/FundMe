@@ -190,12 +190,49 @@ const MainContent: FC = () => {
   );
 };
 
+const ErrorMessage: FC = () => {
+    const error = useStore(s => s.searchError);
+    const clearError = useStore(s => s.clearError);
+    
+    if (!error) return null;
+    
+    return (
+        <motion.div 
+            className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-red-600/90 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-4"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+        >
+            <span>{error}</span>
+            <button 
+                onClick={clearError}
+                className="text-white hover:text-gray-200"
+                aria-label="Dismiss error"
+            >
+                ✕
+            </button>
+        </motion.div>
+    );
+};
+
 const ChatInput: FC = () => {
     const [input, setInput] = useState('');
     const [isRecording, setIsRecording] = useState(false);
-    const { startSearch, setSearchResults, setAiSummary } = useStore();
+    const { 
+        startSearch, 
+        setSearchResults, 
+        setAiSummary, 
+        setSearchError, 
+        clearError 
+    } = useStore();
     const isSearching = useStore(s => s.isSearching);
     const askAI = useAction(api.ai.ask);
+    
+    const showError = (message: string) => {
+        setSearchError(message);
+        setAiSummary('');
+        setSearchResults([], '');
+    };
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -204,21 +241,30 @@ const ChatInput: FC = () => {
 
         setInput('');
         startSearch();
+        clearError();
 
         try {
             const result = await askAI({ prompt });
             if (result) {
-                // Use createDeal to ensure all deals match the expected type
                 const typedDeals = result.deals.map(deal => createDeal(deal));
                 setSearchResults(typedDeals, result.summary);
             } else {
-                setAiSummary("I couldn't find anything, please try again.");
+                showError("I couldn't find any matching deals. Please try a different search.");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("AI search failed:", error);
-            const errorMessage = (error as Error).message || "An unexpected error occurred.";
-            setAiSummary(`Error: ${errorMessage}`);
-            setSearchResults([], ''); // Clear results on error
+            const errorMessage = error?.message || "An unexpected error occurred";
+            
+            // Handle specific error cases
+            if (errorMessage.includes("sign in")) {
+                showError("🔒 Please sign in to use AI search");
+            } else if (errorMessage.includes("API key")) {
+                showError("🔑 Please set up your Gemini API key in settings");
+            } else if (errorMessage.includes("profile")) {
+                showError("👤 Please complete your profile in settings");
+            } else {
+                showError(`❌ Search failed: ${errorMessage}`);
+            }
         }
     }
     
@@ -226,7 +272,8 @@ const ChatInput: FC = () => {
     const handleToggleMic = () => setIsRecording(!isRecording);
 
     return (
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full max-w-2xl mx-auto p-2 rounded-full glass-input">
+        <>
+            <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full max-w-2xl mx-auto p-2 rounded-full glass-input">
             <input
                 type="text"
                 value={input}
@@ -243,7 +290,9 @@ const ChatInput: FC = () => {
                     <PaperPlaneIcon className="w-6 h-6" />
                 </button>
              )}
-        </form>
+            </form>
+            <ErrorMessage />
+        </>
     );
 };
 
@@ -294,36 +343,173 @@ const CreateDealModal: FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen,
         <AnimatePresence>
             {isOpen && (
                 <motion.div 
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="absolute inset-0 bg-black/70" onClick={onClose}></div>
-                    <motion.div 
-                        className="relative w-full max-w-md p-6 rounded-2xl glass-card overflow-hidden"
-                        initial={{ scale: 0.9, y: 20 }}
-                        animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.9, y: 20 }}
+                    {/* Background with blur and overlay */}
+                    <div 
+                        className="fixed inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/95 to-slate-900/90 backdrop-blur-sm"
+                        onClick={onClose}
                     >
-                        <h2 className="text-2xl font-bold mb-4">Create New Deal</h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <input name="name" type="text" placeholder="Deal Name" required className="w-full p-3 rounded-lg bg-slate-800/50 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                            <textarea name="description" placeholder="Description" required className="w-full p-3 rounded-lg bg-slate-800/50 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24 resize-none"></textarea>
-                            <input name="imageUrl" type="url" placeholder="Image URL" required className="w-full p-3 rounded-lg bg-slate-800/50 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                            <div className="flex gap-4">
-                                <input name="amountTarget" type="number" placeholder="Amount Target ($)" required className="w-full p-3 rounded-lg bg-slate-800/50 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                                <input name="interestRate" type="number" placeholder="Return (%)" required className="w-full p-3 rounded-lg bg-slate-800/50 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                        {/* Animated money bag in the background */}
+                        <div className="absolute inset-0 overflow-hidden opacity-20">
+                            <img 
+                                src="/images/hand-drawn-old-money-bag.png" 
+                                alt="" 
+                                className="absolute top-1/4 -left-20 w-64 h-64 opacity-70 animate-float"
+                                style={{ animation: 'float 6s ease-in-out infinite' }}
+                            />
+                            <img 
+                                src="/images/hand-drawn-old-money-bag.png" 
+                                alt="" 
+                                className="absolute bottom-1/4 -right-20 w-64 h-64 opacity-70 animate-float"
+                                style={{ animation: 'float 8s ease-in-out infinite 1s' }}
+                            />
+                        </div>
+                    </div>
+                    
+                    {/* Modal Content */}
+                    <motion.div 
+                        className="relative w-full max-w-lg p-8 glass-modal rounded-2xl overflow-hidden border border-white/10"
+                        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                        animate={{ scale: 1, y: 0, opacity: 1 }}
+                        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button 
+                            onClick={onClose}
+                            className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-white/10 transition-colors"
+                            aria-label="Close"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        
+                        <div className="text-center mb-8">
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent">
+                                Create New Deal
+                            </h2>
+                            <p className="text-slate-400 mt-2">Fill in the details to list your investment opportunity</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <input 
+                                    name="name" 
+                                    type="text" 
+                                    placeholder="Deal Name" 
+                                    required 
+                                    className="w-full p-3.5 rounded-xl glass-input text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/50 transition-all duration-200"
+                                />
                             </div>
-                            <input name="deliveryEta" type="text" placeholder="Delivery ETA (e.g., 'By Friday')" required className="w-full p-3 rounded-lg bg-slate-800/50 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                            <div className="flex items-center gap-2">
-                                <input id="escrow" name="escrow" type="checkbox" className="h-4 w-4 rounded border-slate-700 bg-slate-800/50 text-indigo-600 focus:ring-indigo-500" />
-                                <label htmlFor="escrow">Use Escrow</label>
+                            
+                            <div>
+                                <textarea 
+                                    name="description" 
+                                    placeholder="Describe your deal in detail..." 
+                                    required 
+                                    rows={4}
+                                    className="w-full p-3.5 rounded-xl glass-input text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/50 resize-none transition-all duration-200"
+                                ></textarea>
                             </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <input 
+                                        name="amountTarget" 
+                                        type="number" 
+                                        placeholder="Amount Target ($)" 
+                                        required 
+                                        min="0"
+                                        step="0.01"
+                                        className="w-full p-3.5 rounded-xl glass-input text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/50"
+                                    />
+                                </div>
+                                <div>
+                                    <input 
+                                        name="interestRate" 
+                                        type="number" 
+                                        placeholder="Return Rate (%)" 
+                                        required 
+                                        min="0"
+                                        max="100"
+                                        step="0.1"
+                                        className="w-full p-3.5 rounded-xl glass-input text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/50"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <input 
+                                    name="imageUrl" 
+                                    type="url" 
+                                    placeholder="Image URL (https://...)" 
+                                    required 
+                                    className="w-full p-3.5 rounded-xl glass-input text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/50 transition-all duration-200"
+                                />
+                            </div>
+                            
+                            <div>
+                                <input 
+                                    name="deliveryEta" 
+                                    type="text" 
+                                    placeholder="Delivery Timeline (e.g., 'Within 3 months')" 
+                                    required 
+                                    className="w-full p-3.5 rounded-xl glass-input text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500/50 transition-all duration-200"
+                                />
+                            </div>
+                            
+                            <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-800/30 border border-slate-700/50">
+                                <div className="flex items-center">
+                                    <div className="flex items-center h-5">
+                                        <input 
+                                            id="escrow" 
+                                            name="escrow" 
+                                            type="checkbox" 
+                                            className="h-4 w-4 rounded border-slate-600 bg-slate-700/50 text-indigo-500 focus:ring-indigo-500" 
+                                        />
+                                    </div>
+                                    <label htmlFor="escrow" className="ml-3 text-sm font-medium text-slate-300">
+                                        Enable Escrow Protection
+                                    </label>
+                                </div>
+                                <span className="text-xs text-slate-400">Recommended for high-value deals</span>
+                            </div>
+                            
                             <div className="flex justify-end gap-3 pt-2">
-                                <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors">Cancel</button>
-                                <button type="submit" disabled={isSubmitting} className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors disabled:bg-indigo-800 disabled:cursor-not-allowed">
-                                    {isSubmitting ? 'Creating...' : 'Create Deal'}
+                                <button 
+                                    type="button" 
+                                    onClick={onClose} 
+                                    className="px-6 py-3 rounded-xl bg-slate-700/50 hover:bg-slate-700/70 text-slate-200 font-medium transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting} 
+                                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            Create Deal
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>
@@ -337,9 +523,34 @@ const CreateDealModal: FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen,
 const SettingsModal: FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
     const user = useQuery(api.users.getCurrent);
     const storeApiKey = useMutation(api.users.storeApiKey);
+    const syncUser = useMutation(api.syncUser.syncCurrentUser);
     const [apiKey, setApiKey] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [syncStatus, setSyncStatus] = useState<string | null>(null);
     const hasKey = !!user?.encryptedGeminiKey;
+    const clerkAuth = useClerkAuth();
+
+    const handleSyncUser = async () => {
+        const userId = clerkAuth.userId;
+        if (!userId) {
+            setSyncStatus('Error: No user logged in');
+            return;
+        }
+        
+        setIsSyncing(true);
+        setSyncStatus('Syncing user...');
+        try {
+            const result = await syncUser({ clerkId: userId });
+            setSyncStatus('Sync successful! Please refresh the page.');
+            console.log('User sync result:', result);
+        } catch (error) {
+            console.error('Error syncing user:', error);
+            setSyncStatus(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     useEffect(() => {
         setApiKey('');
@@ -377,6 +588,33 @@ const SettingsModal: FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, o
                     >
                         <h2 className="text-2xl font-bold mb-2">Settings</h2>
                         <p className="text-slate-400 mb-4">Your Gemini API key is stored securely and used only for your requests.</p>
+                        
+                        {/* Debug Section */}
+                        <div className="mb-6 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                            <h3 className="font-medium text-slate-300 mb-2">Debug Tools</h3>
+                            <div className="flex flex-col space-y-3">
+                                <button
+                                    type="button"
+                                    onClick={handleSyncUser}
+                                    disabled={isSyncing}
+                                    className="px-3 py-2 text-sm rounded-md bg-amber-600 hover:bg-amber-500 disabled:bg-amber-800 disabled:cursor-not-allowed"
+                                >
+                                    {isSyncing ? 'Syncing...' : 'Sync User Account'}
+                                </button>
+                                {syncStatus && (
+                                    <div className={`text-xs p-2 rounded ${syncStatus.includes('Error') ? 'bg-red-900/50 text-red-300' : 'bg-green-900/50 text-green-300'}`}>
+                                        {syncStatus}
+                                    </div>
+                                )}
+                            </div>
+                            {user && (
+                                <div className="mt-3 text-xs text-slate-400 break-all">
+                                    <div>User ID: {user?._id || 'N/A'}</div>
+                                    <div>Clerk ID: {user?.clerkId || 'N/A'}</div>
+                                    <div>Has API Key: {user?.encryptedGeminiKey ? 'Yes' : 'No'}</div>
+                                </div>
+                            )}
+                        </div>
 
                         {hasKey && (
                            <div className="p-3 mb-4 rounded-lg bg-green-900/50 border border-green-700 text-green-300 text-sm">
