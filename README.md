@@ -1,6 +1,7 @@
 <div align="center">
-  <img width="1200" height="475" alt="FundMe Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img width="1200" height="475" alt="FundMe Banner" src="./public/images/FundMeBag.png" />
   <h1>FundMe - AI-Powered Deal Marketplace</h1>
+  <p><em>Icon by <a href="https://favpng.com" target="_blank">FavPNG</a></em></p>
   <p>Discover and fund exciting opportunities with our intelligent deal platform</p>
   <p><strong>Now with multilingual support for Shona and Ndebele</strong> 🌍</p>
 </div>
